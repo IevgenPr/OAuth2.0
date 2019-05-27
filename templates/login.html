@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js">
+  </script>
+  <script src="//apis.google.com/js/client:platform.js?onload=start" async defer>
+  </script>
+  <script>function start(){
+    gapi.load("auth2", function() {
+      auth2 = gapi.auth2.init({
+        client_id: "637996483962-p7uqa0vicdhlo42frth5vve8892kk8oq.apps.googleusercontent.com"
+      });
+    });
+  }</script>>
+
+
+
+</head>
+
+<body>
+  <!-- google sign in-->
+  <button id="signinButton">Google SignIn</button>
+  <div id="result"></div>
+
+<script>
+  $('#signinButton').click(function(){
+    function signInCallback(authResult){
+
+        if (authResult['code']) {
+          console.log(authResult["code"]);
+          console.log(authResult);
+          //hide button
+          $("#signinButton").attr("style", "display: none");
+
+          // send onetime code to the server
+          $.ajax({
+            type: 'POST',
+            url: 'gconnect?state={{STATE}}',
+            headers: {"X-Requested-With": "XMLHttpRequest"},
+            processData: false,
+            contentType: 'applicaton/octet-stream; charset=utf-8',
+            data: authResult['code'],
+            success: function(result) {
+              console.log(result);
+              if (result) {
+                $('#result').html('Login Successful!<br>' + result + '</br>Redirecting...');
+                setTimeout(function(){ window.location.href="restaurant";}, 4000); 
+              } 
+              // else if (authResult['error']) {
+              //   console.log('there was an error: ' + authResult['error']);
+              // } else {
+              //   $('#result').html('Failed to make a server-side call. Check your configuration and console.');
+              // }
+            }
+
+          });
+
+        } else {
+          console.log("There was an errror: " + authResult["code"]);
+          $('#result').html('Failed to make a server-side call. Check your configuration and console.');
+              // };
+        };
+      };
+      auth2.grantOfflineAccess().then(signInCallback);
+  });
+  
+</script>
+
+<!-- FB sign in -->
+  <script>
+    window.fbAsyncInit = function {
+      FB.init({
+        appId: '712716012496775',
+        cookie: true, // allow server to access session
+        xfbml: true, //parse social plugins on this page
+        version: 'v2.2' // use this version
+      });
+    };
+
+    // Load SDK asyncronously
+    (function(d, s, id) {
+      var js, fjs, d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      js.src = "//connect.facebook.net/en_US/sdk.js";
+      fjs.parentNode.insertBefore(js, fjs);
+    } (document, 'script', 'facebook-jssdk'));
+
+    // run test of Graph API after login is successful
+    function sendTokenToServer() {
+      var access_token = FB.getAuthResonse()['AccessToken'];
+      console.log('welcome, fetching your access token:  ');
+      console.log(access_token);
+      FB.api('/me', function(response){
+        console.log('successful login for: ' + response.name);
+        $.ajax({
+          type: 'POST',
+          url: '/fbconnect?state={{STATE}}',
+          processData: false,
+          data: access_token,
+          contentType: 'application/octet-stream; charset=utf-8',
+          success: function(result){
+            // handle of reviry the server response if necessary
+            if (result){
+              $('#result').html('Login successful!<br>' + result + '<br> Redirecting...')
+              setTimeout(function(){
+                window.location.href = "/restaurant";
+              }, 4000);
+            } else {
+              $('#result').html('Failed to make server side call Check your configuration and console.');
+            }
+          }
+        })
+      })
+    }
+  </script>
+
+  <button>
+    <fb:login-button scope="public_profile, email" onlogin="sendTokenToServer();"> 
+      <a href="javascript:sendTokenToServer()"> Login with Facebook</a>
+  </fb:login-button>
+  </button>
+</body>
+</html>
